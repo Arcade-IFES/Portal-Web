@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Criar Conta — Recreio Arcade</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="auth-shell">
+  <div class="auth-card">
+    <a href="index.html" class="brand">Recreio<br>Arcade</a>
+    <h2>Criar Conta</h2>
+    <p class="auth-sub">Cadastre-se para baixar, avaliar e enviar jogos</p>
+
+    <div class="auth-error-banner" id="error-banner"></div>
+
+    <form id="cadastro-form" novalidate>
+      <div class="field">
+        <label for="apelido">Apelido<span class="required">*</span></label>
+        <input type="text" id="apelido" placeholder="Como você quer ser chamado" required>
+        <span class="form-error">Escolha um apelido.</span>
+      </div>
+
+      <div class="field">
+        <label for="email">E-mail<span class="required">*</span></label>
+        <input type="email" id="email" placeholder="seu@email.com" required>
+        <span class="form-error">Informe um e-mail válido.</span>
+      </div>
+
+      <div class="field">
+        <label for="senha">Senha<span class="required">*</span></label>
+        <input type="password" id="senha" placeholder="Mínimo de 6 caracteres" required minlength="6">
+        <span class="form-error">A senha precisa ter pelo menos 6 caracteres.</span>
+      </div>
+
+      <div class="field">
+        <label for="confirmar-senha">Confirmar Senha<span class="required">*</span></label>
+        <input type="password" id="confirmar-senha" placeholder="Repita a senha" required>
+        <span class="form-error">As senhas não coincidem.</span>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Criar Conta</button>
+    </form>
+
+    <p class="auth-switch">Já tem uma conta? <a href="index.html">Entrar</a></p>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+</body>
+</html>

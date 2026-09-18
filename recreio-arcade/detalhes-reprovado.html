@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detalhes do Jogo — Recreio Arcade</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="app-header" id="app-header"></header>
+
+<main>
+  <section class="panel">
+    <div class="details-layout">
+      <div class="details-main">
+        <div class="screenshot" id="screenshot">
+          <img id="screenshot-img" src="" alt="Captura de tela do jogo">
+          <button class="screenshot__nav prev" id="btn-prev" aria-label="Captura anterior"></button>
+          <button class="screenshot__nav next" id="btn-next" aria-label="Próxima captura"></button>
+          <div class="screenshot__dots" id="screenshot-dots"></div>
+        </div>
+        <h2 class="details-main__title" id="jogo-titulo"></h2>
+        <p class="details-main__meta">Autor: <span id="jogo-autor"></span></p>
+        <p class="details-main__meta">Nota: <strong id="jogo-nota"></strong>/10</p>
+        <p class="details-main__resumo"><strong>Resumo:</strong> <span id="jogo-resumo"></span></p>
+      </div>
+
+      <aside class="details-side">
+        <div class="status-row">
+          <div>
+            <strong>Estado atual</strong>
+            <span class="status-value is-reprovado">REPROVADO</span>
+          </div>
+          <div>
+            <strong>Reprovado por</strong>
+            <span class="status-value" id="reprovado-por"></span>
+          </div>
+          <div>
+            <strong>Data de Reprovação</strong>
+            <span class="status-value" id="data-reprovacao"></span>
+          </div>
+          <div>
+            <strong>Versão atual</strong>
+            <span class="status-value" id="versao-atual"></span>
+          </div>
+          <div>
+            <strong>Versões anteriores</strong>
+            <span class="status-value" id="versoes-anteriores"></span>
+          </div>
+        </div>
+
+        <div class="motivo-box">
+          <strong>Motivo da reprovação:</strong>
+          <span id="motivo-reprovacao"></span>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="app-footer" id="app-footer"></footer>
+
+<script src="js/icons.js"></script>
+<script src="js/data.js"></script>
+<script src="js/components.js"></script>
+<script src="js/detalhes-reprovado.js"></script>
+</body>
+</html>

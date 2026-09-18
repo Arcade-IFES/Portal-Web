@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload de Novos Jogos — Recreio Arcade</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="app-header" id="app-header"></header>
+
+<main>
+  <section class="panel">
+    <p class="section-title" id="section-title-icon">Informações do Jogo</p>
+    <p class="section-subtitle">Preencha os dados do seu jogo para enviá-lo ao catálogo.</p>
+
+    <form id="upload-form" novalidate>
+      <div class="upload-grid">
+        <div>
+          <div class="field">
+            <label for="nome-jogo">Nome do Jogo<span class="required">*</span></label>
+            <input type="text" id="nome-jogo" placeholder="Ex.: Aventura Épica" required>
+            <span class="form-error">Informe o nome do jogo.</span>
+          </div>
+
+          <div class="field">
+            <label for="versao">Versão Atual<span class="required">*</span></label>
+            <input type="text" id="versao" placeholder="Ex.: 1.0.0" required>
+            <span class="form-error">Informe a versão do jogo.</span>
+          </div>
+
+          <div class="field">
+            <label for="descricao">Descrição<span class="required">*</span></label>
+            <textarea id="descricao" maxlength="500" placeholder="Descreva seu jogo, história e objetivos..." required></textarea>
+            <span class="char-count"><span id="descricao-count">0</span>/500</span>
+            <span class="form-error">Escreva uma descrição para o jogo.</span>
+          </div>
+
+          <div class="field">
+            <label for="resumo">Resumo<span class="required">*</span></label>
+            <textarea id="resumo" maxlength="50" placeholder="Resuma sua descrição" required style="min-height: 60px;"></textarea>
+            <span class="char-count"><span id="resumo-count">0</span>/50</span>
+            <span class="form-error">Escreva um resumo curto do jogo.</span>
+          </div>
+
+          <div class="field">
+            <label for="autores">Autor(es)<span class="required">*</span></label>
+            <input type="text" id="autores" placeholder="Ex.: Pedro Paglioni, Eliabe, Isac" required>
+            <span class="hint">Separe múltiplos autores com vírgula.</span>
+            <span class="form-error">Informe pelo menos um autor.</span>
+          </div>
+
+          <div class="field">
+            <label for="controles">Controles do Jogo<span class="required">*</span></label>
+            <textarea id="controles" placeholder="Descreva os controles do jogo." required></textarea>
+            <span class="hint">Ex.: Setas - mover | Espaço - pular | Z - atacar | X - usar habilidade</span>
+            <span class="form-error">Descreva os controles do jogo.</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="field">
+            <label for="capa-input">Capa do Jogo<span class="required">*</span></label>
+            <span class="hint" style="margin-top:-4px; margin-bottom:8px; display:block;">Envie imagens para representar seu jogo (Capa será a primeira imagem).</span>
+            <div class="dropzone" id="dropzone-capa" tabindex="0">
+              <div id="capa-icon"></div>
+              <strong>Arraste e solte a imagem aqui<br>ou clique para selecionar</strong>
+              <p class="dropzone-note">Formatos aceitos: PNG, JPG, JPEG (Máx. 5MB)</p>
+              <p class="file-selected" id="capa-filename"></p>
+            </div>
+            <input type="file" id="capa-input" accept=".png,.jpg,.jpeg" class="visually-hidden">
+            <span class="form-error" id="capa-error">Selecione uma imagem de capa.</span>
+          </div>
+
+          <div class="field">
+            <label for="zip-input">Arquivo do Jogo<span class="required">*</span></label>
+            <span class="hint" style="margin-top:-4px; margin-bottom:8px; display:block;">Envie o pacote do seu jogo no formato .zip.</span>
+            <div class="dropzone" id="dropzone-zip" tabindex="0">
+              <div id="zip-icon"></div>
+              <strong>Arraste e solte o arquivo .zip aqui<br>ou clique para selecionar</strong>
+              <p class="dropzone-note">Apenas arquivos .zip são aceitos (Máx. 20MB)</p>
+              <p class="file-selected" id="zip-filename"></p>
+            </div>
+            <input type="file" id="zip-input" accept=".zip" class="visually-hidden">
+            <span class="form-error" id="zip-error">Selecione o arquivo .zip do jogo.</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="upload-footer">
+        <button type="submit" class="btn btn-primary" id="btn-submeter">
+          <span id="submit-icon"></span> Submeter Jogo
+        </button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<footer class="app-footer" id="app-footer"></footer>
+
+<!-- Aviso: envio válido -->
+<div class="modal-overlay" id="modal-valido">
+  <div class="modal-box">
+    <div id="check-list-valido"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="fecharEIrPara('modal-valido')">Voltar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Aviso: inválido — index.html com erro -->
+<div class="modal-overlay" id="modal-invalido-1">
+  <div class="modal-box">
+    <div id="check-list-invalido-1"></div>
+    <p class="error-reason">Motivo do erro de validação:<br><code>index.html</code> com <strong>erro</strong>.</p>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="closeModal('modal-invalido-1')">Voltar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Aviso: inválido — game.json com erro -->
+<div class="modal-overlay" id="modal-invalido-2">
+  <div class="modal-box">
+    <div id="check-list-invalido-2"></div>
+    <p class="error-reason">Motivo do erro de validação:<br><code>game.json</code> com <strong>erro</strong>.</p>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="closeModal('modal-invalido-2')">Voltar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Aviso: inválido — .zip com erro -->
+<div class="modal-overlay" id="modal-invalido-3">
+  <div class="modal-box">
+    <div id="check-list-invalido-3"></div>
+    <p class="error-reason">Motivo do erro de validação:<br><code>.zip</code> com <strong>erro</strong>.</p>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="closeModal('modal-invalido-3')">Voltar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/icons.js"></script>
+<script src="js/data.js"></script>
+<script src="js/components.js"></script>
+<script src="js/upload.js"></script>
+</body>
+</html>
