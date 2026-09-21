@@ -68,6 +68,6 @@ app.post('/api/resultados',async(req,reply)=>{const response=await app.inject({m
 await fs.mkdir(path.dirname(dataFile),{recursive:true})
 try{await fs.access(dataFile)}catch{await writeDb({jogos:[],placares:[],feedbacks:[],decisoes:[],anonimizações:[]})}
 await app.register(fastifyStatic,{root:publicDir,prefix:'/mock-public/'})
-try{await fs.access(webDist);await app.register(fastifyStatic,{root:webDist})}catch{}
+try{await fs.access(webDist);await app.register(fastifyStatic,{root:webDist,decorateReply:false})}catch{}
 app.setNotFoundHandler(async(req,reply)=>{if(req.method==='GET'&&!req.url.startsWith('/api/')&&!req.url.startsWith('/health')){try{return reply.sendFile('index.html')}catch{return reply.code(404).send({erro:'Rota não encontrada.'})}}return reply.code(404).send({erro:'Rota não encontrada.'})})
 await app.listen({port:Number(process.env.PORT||3000),host:'0.0.0.0'})
