@@ -1,0 +1,17 @@
+{
+  "jogos": [
+    {"id":"1","nome":"Aventura Épica","versao":"1.0.0","descricao":"Uma jornada de espada e magia por reinos esquecidos.","resumo":"Uma aventura de espada e magia.","autores":["Pedro Paglioni"],"controles":"Setas - mover | Espaço - pular","repositorio_url":"https://github.com/exemplo/aventura-epica","status":"aprovado","nota":4.8,"avaliacoes":12,"capa":"","enviado_em":"2026-09-10T10:00:00Z"},
+    {"id":"2","nome":"Galaxy Quest","versao":"1.2.0","descricao":"Explore planetas desconhecidos em uma odisseia espacial 2D.","resumo":"Uma odisseia espacial 2D.","autores":["Lucas Rocha","Maria Silva"],"controles":"Setas - mover | Espaço - ação","repositorio_url":"https://github.com/exemplo/galaxy-quest","status":"aprovado","nota":4.4,"avaliacoes":24,"capa":"","enviado_em":"2026-09-11T14:30:00Z"},
+    {"id":"3","nome":"Labirinto de Cristal","versao":"0.9.0","descricao":"Puzzle-platformer com mecânicas de luz e reflexo.","resumo":"Resolva puzzles usando luz e reflexos.","autores":["Isac Victor"],"controles":"Setas - mover | Z - interagir","repositorio_url":"https://github.com/exemplo/labirinto-cristal","status":"submetido","nota":0,"avaliacoes":0,"capa":"","enviado_em":"2026-09-18T16:00:00Z"}
+  ],
+  "placares": [
+    {"id_partida":"seed-001","jogo_id":"1","versao_id":"1.0.0","jogador":"DragonSlayer99","pontos":99999,"duracao_s":300,"acertos":18,"erros":2,"tema":"História","jogado_em":"2026-09-15T14:00:00Z","estacao":"TESTE-01"},
+    {"id_partida":"seed-002","jogo_id":"1","versao_id":"1.0.0","jogador":"PixelQueen","pontos":95000,"duracao_s":280,"acertos":17,"erros":3,"tema":"História","jogado_em":"2026-09-16T14:00:00Z","estacao":"TESTE-01"},
+    {"id_partida":"seed-003","jogo_id":"2","versao_id":"1.2.0","jogador":"NeonRider","pontos":87000,"duracao_s":250,"acertos":15,"erros":4,"tema":"Geografia","jogado_em":"2026-09-17T14:00:00Z","estacao":"TESTE-02"}
+  ],
+  "feedbacks": [
+    {"id":"fb-001","jogo_id":"1","apelido":"PixelQueen","nota":5,"comentario_opcional":"Muito divertido!","criado_em":"2026-09-16T15:00:00Z"},
+    {"id":"fb-002","jogo_id":"2","apelido":"NeonRider","nota":4,"comentario_opcional":"Gostei dos desafios.","criado_em":"2026-09-17T15:00:00Z"}
+  ],
+  "decisoes": []
+}

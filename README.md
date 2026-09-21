@@ -1,28 +1,67 @@
-# Recreio Arcade — Grupo 2
+# Recreio Arcade — G2 Portal Web
 
-Pacote integrado para desenvolvimento do Portal de Gestão do G2.
+Portal do Grupo 2 para a plataforma de gestão do Recreio Arcade.
 
-- `recreio-arcade/`: protótipo visual original enviado pelo grupo, agora consumindo a API quando ela está disponível.
-- `backend/`: API REST em Node.js + Fastify + TypeScript.
-- `INTEGRACAO.md`: fluxo de integração com o servidor local do fliperama.
+## Stack
 
-## Ordem para executar
+- React
+- TypeScript
+- Vite
+- Node.js + Fastify (somente no mock de integração)
+- React Router
 
-Terminal 1:
+A linguagem visual segue a plataforma local do G3: fundo escuro, tipografia monoespaciada, cyan/amarelo/magenta/verde neon, alto contraste e controles simples.
+
+## Responsabilidade do G2
+
+O G2 é responsável por:
+
+- catálogo público;
+- detalhe do jogo;
+- submissão por URL de repositório GitHub (fluxo confirmado pelo professor);
+- fila e painel de curadoria;
+- ranking de jogadores;
+- ranking de jogos;
+- exibição de feedback e taxa de acerto por tema.
+
+O G2 não é responsável pelo banco oficial, cálculo oficial dos rankings, sincronização do fliperama ou captura de placares.
+
+## Desenvolvimento
 
 ```bash
-cd backend
 npm install
+npm install --prefix web
+npm install --prefix mock-api
 npm run dev
 ```
 
-Terminal 2:
+Portal: http://localhost:5173
 
-```bash
-cd recreio-arcade
-npx serve . -l 5173
+Mock API: http://localhost:3000
+
+## API oficial
+
+Quando G1 publicar a API real, defina:
+
+```env
+VITE_API_BASE_URL=https://api-oficial.exemplo/api
 ```
 
-Abra `http://localhost:5173/index.html`.
+O frontend então passa a consumir a API oficial sem precisar mudar as telas.
 
-A API fica em `http://localhost:3000`.
+## Mock
+
+`mock-api/` existe somente para permitir desenvolvimento e testes antes da API oficial. Ele implementa GET/POST para catálogo, submissão, curadoria e rankings e possui um endpoint de placares apenas para simular a fronteira G3 → API.
+
+## Documentação
+
+- `docs/ARQUITETURA.md` — fronteiras entre grupos.
+- `docs/INTEGRACAO-G1-G3.md` — contratos e responsabilidades.
+- `docs/TESTES-API.md` — testes GET/POST.
+- `docs/DEPLOY.md` — deploy de demonstração.
+- `docs/SPEC-KIT-GUIA.md` — como usar Spec-Kit no G2.
+- `.specify/memory/constitution.md` — princípios do repositório.
+
+## Spec-Kit
+
+O material do professor mostra o uso de `specify init` por repositório e a sequência Constitution → Specify → Clarify → Plan → Tasks → Analyze → Implement. Este repositório já contém uma constitution e specs iniciais para o G2.
