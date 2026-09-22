@@ -60,3 +60,39 @@ Não atribua ao G2:
 - SDK do jogo.
 
 Esses itens pertencem a outras fronteiras do projeto.
+
+## 6. Diagnóstico e prognóstico do projeto
+
+O Spec-Kit do G2 também deve registrar problemas encontrados durante a validação e as ações previstas para evitar que eles voltem a aparecer.
+
+### Diagnóstico
+
+O diagnóstico descreve o estado observado e deve diferenciar:
+
+- erro reproduzido em execução;
+- erro encontrado pela checagem de tipos/build;
+- código morto ou duplicado;
+- limitação de ambiente de teste;
+- divergência de contrato entre grupos.
+
+Para este ciclo, o diagnóstico registrado em `specs/005-hardening/spec.md` identificou:
+
+- saída incorreta do TypeScript sem `rootDir`;
+- conflito de `sendFile` ao registrar `@fastify/static` duas vezes;
+- tipo `unknown` em `req.body` na rota de compatibilidade `/api/resultados`;
+- pasta `api/` órfã;
+- necessidade de formatação para leitura e revisão humana.
+
+### Prognóstico
+
+O prognóstico descreve as ações que devem ser verificadas depois das correções. Ele não deve tratar uma verificação não executada como concluída.
+
+Neste ciclo, o plano é:
+
+1. compilar o projeto com as dependências instaladas;
+2. iniciar o mock com `web/dist` presente;
+3. executar os testes reproduzíveis da API;
+4. validar o deploy de demonstração;
+5. confirmar, antes da integração real, os contratos publicados pelo G1.
+
+As tarefas de verificação ficam em `specs/005-hardening/tasks.md`.

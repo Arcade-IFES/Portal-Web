@@ -122,7 +122,11 @@ export const api = {
 
   decidirVersao: (
     versaoId: string,
-    payload: { decisao: 'aprovado' | 'reprovado'; justificativa: string; curador: string },
+    payload: {
+      decisao: 'aprovado' | 'reprovado'
+      justificativa: string
+      curador: string
+    },
   ) =>
     request<Game>(`/versoes/${encodeURIComponent(versaoId)}/decisao`, {
       method: 'POST',
@@ -130,12 +134,18 @@ export const api = {
     }),
 
   rankingJogadores: (jogo?: string) =>
-    request<PlayerRank[]>(`/ranking/jogadores${jogo ? `?jogo=${encodeURIComponent(jogo)}` : ''}`),
+    request<PlayerRank[]>(
+      `/ranking/jogadores${jogo ? `?jogo=${encodeURIComponent(jogo)}` : ''}`,
+    ),
 
   rankingJogos: () => request<GameRank[]>('/ranking/jogos'),
 
   anonimizarJogador: (apelido: string) =>
-    request<{ ok: boolean; apelido_anterior: string; apelido_novo: string }>('/ranking/jogadores/anonimizar', {
+    request<{
+      ok: boolean
+      apelido_anterior: string
+      apelido_novo: string
+    }>('/ranking/jogadores/anonimizar', {
       method: 'POST',
       body: JSON.stringify({ apelido }),
     }),

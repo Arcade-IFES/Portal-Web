@@ -28,3 +28,6 @@
 - Toda integração deve ter pelo menos um teste reproduzível de GET e POST quando aplicável.
 - Erros de API devem ser apresentados de forma acionável ao usuário.
 - O Portal deve funcionar com dados mockados sem depender da disponibilidade da API oficial.
+- O build deve ser tratado como requisito de qualidade: não basta o código executar em desenvolvimento; a checagem TypeScript deve passar.
+- Alterações de formatação devem preservar comportamento, contratos, mensagens e regras de negócio.
+- Diagnósticos devem registrar problemas reproduzidos ou verificáveis; prognósticos devem registrar verificações futuras sem marcá-las como concluídas antes da execução.

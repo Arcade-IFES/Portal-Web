@@ -108,3 +108,23 @@ renderização dos dados
 ```
 
 Ele não prova a integração com G1 real. Para isso, `VITE_API_BASE_URL` deve apontar para a API oficial.
+
+## Validação de build e inicialização
+
+Antes do deploy, a sequência mínima é:
+
+```bash
+npm install
+npm run build
+npm start
+```
+
+Após o build, confirme que existe:
+
+```text
+mock-api/dist/server.js
+```
+
+O `npm start` deve ser testado com `web/dist` presente, porque o servidor registra os arquivos estáticos do frontend nessa condição.
+
+Essas verificações fazem parte do hardening documentado em `specs/005-hardening/`.
