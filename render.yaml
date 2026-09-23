@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: recreio-arcade-g2-demo
+    runtime: node
+    buildCommand: npm install && npm install --prefix web && npm install --prefix mock-api && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production

@@ -1,0 +1,5 @@
+{
+  "name":"recreio-arcade-g2","private":true,"version":"1.0.0","type":"module",
+  "scripts":{"dev":"concurrently -k \"npm:dev:web\" \"npm:dev:api\"","dev:web":"npm --prefix web run dev","dev:api":"npm --prefix mock-api run dev","build":"npm run build:web && npm run build:api","build:web":"npm --prefix web run build","build:api":"npm --prefix mock-api run build","start":"npm --prefix mock-api run start","typecheck":"npm --prefix web run build && npm --prefix mock-api run build"},
+  "devDependencies":{"concurrently":"^9.2.1"}
+}

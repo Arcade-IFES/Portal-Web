@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.log
+.env
+.DS_Store
+web/dist/
+mock-api/dist/
+mock-api/data/db.local.json
