@@ -1,39 +1,48 @@
-# Deploy para teste online
+# Deploy do Portal G2
 
-## Opção preparada: Render
+## Produção — API oficial do G1
 
-O `render.yaml` cria um único Web Service de demonstração. Ele sobe o mock Fastify e serve o build do React.
-
-### Build
-
-```bash
-npm install && npm install --prefix web && npm install --prefix mock-api && npm run build
-```
-
-### Start
-
-```bash
-npm start
-```
-
-Depois do deploy:
-
-- `/` → Portal React
-- `/health` → health da API mock
-- `/api/jogos?status=aprovado` → catálogo mock
-
-### Importante
-
-Esse deploy é para testar o G2 enquanto G1 ainda não está disponível. Não trate `mock-api` como API oficial da plataforma.
-
-Quando G1 publicar a API, crie o build do frontend com:
+O Portal deve ser compilado com:
 
 ```env
-VITE_API_BASE_URL=https://api-oficial.exemplo/api
+VITE_API_BASE_URL=https://plataforma-gestao-api.onrender.com/api
 ```
 
-e faça o deploy do frontend sem depender do mock.
+A variável é incorporada ao build do Vite. Não coloque token de curador nessa variável nem no código.
 
-### Persistência
+## Desenvolvimento local — Mock
 
-O `mock-api/data/db.json` é somente uma persistência de desenvolvimento. O banco oficial da plataforma não pertence ao G2.
+Para trabalhar sem depender da API oficial:
+
+```bash
+npm install
+npm install --prefix web
+npm install --prefix mock-api
+npm run dev
+```
+
+Use o `.env` sem `VITE_API_BASE_URL` para que o Vite utilize o proxy `/api` apontando para `http://localhost:3000`.
+
+No mock local, o token de curador para testes é:
+
+```text
+dev-curador
+```
+
+Esse token é artificial e existe somente para desenvolvimento local.
+
+## Render
+
+O `render.yaml` existente continua preparado para o modo de demonstração com Mock API + frontend servido pelo Fastify.
+
+Para produção integrada ao G1, prefira configurar o build do frontend com `VITE_API_BASE_URL` apontando para a API oficial e publicar o frontend sem usar o mock como fonte de dados.
+
+## Validação
+
+Antes de considerar o deploy pronto:
+
+```bash
+npm run build
+```
+
+Depois valide contra a API do G1 os fluxos que exigem integração real, principalmente submissão, autenticação de curador, curadoria, rankings e anonimização.
