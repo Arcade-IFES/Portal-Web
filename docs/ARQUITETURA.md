@@ -8,12 +8,12 @@ O G2 implementa a interface web da Plataforma de Gestão:
 - detalhe do jogo;
 - submissão de jogos;
 - fila/painel de curadoria;
-- ranking de jogadores geral e por jogo;
+- ranking de jogadores por jogo;
 - ranking de jogos;
-- exibição do feedback recebido do pátio;
+- exibição do feedback recebido;
 - exibição de tema, nível, clássico de referência e taxa de acerto por tema.
 
-Essas responsabilidades correspondem à divisão do trabalho publicada pelo professor. A especificação atribui ao G2 o portal público e o painel do curador, enquanto a API, persistência, ingestão de partidas e cálculo oficial dos rankings ficam na camada da plataforma de gestão. 
+A API, persistência, ingestão, placares e cálculos oficiais pertencem ao G1.
 
 ## Fronteira entre os grupos
 
@@ -47,49 +47,76 @@ Essas responsabilidades correspondem à divisão do trabalho publicada pelo prof
 
 ## API oficial consumida pelo G2
 
-O contrato publicado pelo professor contém, entre outras, estas rotas:
+Base atual:
 
-- `GET /api/jogos?status=aprovado`
-- `GET /api/jogos/{id}`
-- `POST /api/jogos` — o fluxo atual do projeto foi alterado para receber URL de repositório GitHub, por decisão comunicada pelo professor;
-- `POST /api/versoes/{id}/decisao`
-- `GET /api/ranking/jogadores?jogo=`
-- `GET /api/ranking/jogos`
+```text
+https://plataforma-gestao-api.onrender.com/api
+```
 
-O contrato publicado ainda mostra `.zip` no texto da especificação. Para este repositório, a decisão de usar URL GitHub é tratada como uma alteração de contrato já confirmada pela equipe/professor; o payload definitivo deve ser alinhado com G1.
+O contrato oficial do G1 documenta, entre outras, estas rotas:
+
+- `GET /api/jogos` — catálogo aprovado por padrão;
+- `GET /api/jogos?status=submetido` — fila de curadoria;
+- `GET /api/jogos/{id}` — detalhes;
+- `POST /api/jogos` — submissão por repositório + tag;
+- `GET /api/curadores/eu` — validação do curador;
+- `POST /api/versoes/{versao_id}/decisao` — decisão autenticada;
+- `GET /api/ranking/jogadores?jogo={id}` — ranking por jogo;
+- `GET /api/ranking/jogos` — ranking de jogos;
+- `POST /api/ranking/jogadores/anonimizar` — anonimização autenticada.
+
+O G1 informa que submissão, catálogo e rankings não exigem token; curadoria e anonimização exigem token de curador.
+
+## Submissão
+
+O Portal envia:
+
+```json
+{
+  "repositorio_url": "https://github.com/usuario/jogo",
+  "ref": "v1.0.0",
+  "resumo": "Resumo opcional"
+}
+```
+
+Nome, autores, descrição, controles e demais metadados são extraídos pelo G1 do `game.json`.
+
+## Curadoria
+
+O Portal consulta a fila pública e usa `preview_url` em iframe. A decisão recebe `Authorization: Bearer cur_...` e somente `decisao`/`justificativa` no corpo. `curador` no corpo é ignorado pelo G1.
+
+## Rankings
+
+O Portal não calcula rankings oficiais.
+
+O ranking de jogadores é sempre por jogo. Não existe ranking geral somando jogos.
+
+O ranking de jogos também é calculado pelo G1; o Portal apenas apresenta os valores retornados.
 
 ## O que o G2 NÃO faz
 
 - não mantém o banco oficial;
-- não calcula o ranking oficial;
+- não calcula rankings oficiais;
 - não ingere placares do fliperama como autoridade;
 - não sincroniza jogos para a máquina do pátio;
 - não executa jogos em produção;
-- não decide o contrato sozinho.
+- não implementa autenticação própria para substituir a do G1;
+- não decide contratos sozinho.
 
 ## Mock de integração
 
-`mock-api/` existe apenas para permitir que o G2 seja desenvolvido e testado antes da API oficial ficar disponível.
+`mock-api/` existe apenas para desenvolvimento local.
 
-O mock implementa os contratos necessários para testar:
+Ele reproduz o contrato principal necessário pelo Portal, incluindo o novo fluxo de submissão e uma autenticação artificial de curador (`dev-curador`). O mock não baixa repositórios nem valida `game.json`; essas são responsabilidades da API oficial.
 
-- GET de catálogo;
-- GET de detalhes;
-- POST de submissão por URL GitHub;
-- GET da fila de curadoria;
-- POST de decisão;
-- GET dos rankings;
-- POST de anonimização;
-- POST de placar apenas para reproduzir o tráfego de integração em testes.
-
-O último item não transforma G2 no dono do fluxo de placares.
+O endpoint local de placares continua existindo apenas para reproduzir testes da fronteira G3 → G1. O G2 não depende dele em produção.
 
 ## Produção
 
-Em produção, configure:
+Configure o build do frontend com:
 
 ```env
-VITE_API_BASE_URL=https://URL-DA-API-OFICIAL/api
+VITE_API_BASE_URL=https://plataforma-gestao-api.onrender.com/api
 ```
 
-O frontend deixa de falar com `mock-api` e passa a consumir G1.
+O frontend passa a consumir diretamente a API oficial do G1.

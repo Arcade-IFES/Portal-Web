@@ -18,15 +18,31 @@ O G2 é responsável por:
 
 - catálogo público;
 - detalhe do jogo;
-- submissão por URL de repositório GitHub (fluxo confirmado pelo professor);
+- submissão por URL de repositório GitHub + tag;
 - fila e painel de curadoria;
-- ranking de jogadores;
+- ranking de jogadores por jogo;
 - ranking de jogos;
 - exibição de feedback e taxa de acerto por tema.
 
 O G2 não é responsável pelo banco oficial, cálculo oficial dos rankings, sincronização do fliperama ou captura de placares.
 
-## Desenvolvimento
+## API oficial do G1
+
+Base atual:
+
+```text
+https://plataforma-gestao-api.onrender.com/api
+```
+
+Para produção, defina:
+
+```env
+VITE_API_BASE_URL=https://plataforma-gestao-api.onrender.com/api
+```
+
+O contrato oficial está documentado no repositório do G1 e deve ser tratado como fonte de verdade para a integração.
+
+## Desenvolvimento local
 
 ```bash
 npm install
@@ -39,29 +55,25 @@ Portal: http://localhost:5173
 
 Mock API: http://localhost:3000
 
-## API oficial
-
-Quando G1 publicar a API real, defina:
-
-```env
-VITE_API_BASE_URL=https://api-oficial.exemplo/api
-```
-
-O frontend então passa a consumir a API oficial sem precisar mudar as telas.
+Se `VITE_API_BASE_URL` estiver vazio, o frontend usa o proxy do Vite para o Mock API.
 
 ## Mock
 
-`mock-api/` existe somente para permitir desenvolvimento e testes antes da API oficial. Ele implementa GET/POST para catálogo, submissão, curadoria e rankings e possui um endpoint de placares apenas para simular a fronteira G3 → API.
+`mock-api/` existe somente para desenvolvimento e testes antes ou fora da API oficial.
+
+O mock reproduz o contrato principal do G1 para catálogo, detalhes, submissão, autenticação/curadoria, rankings e anonimização. O token local de curador é `dev-curador`.
+
+O mock não substitui a validação/ingestão real do G1 e não é fonte oficial de dados.
 
 ## Documentação
 
-- `docs/ARQUITETURA.md` — fronteiras entre grupos.
+- `docs/ARQUITETURA.md` — fronteiras entre grupos e API oficial.
 - `docs/INTEGRACAO-G1-G3.md` — contratos e responsabilidades.
-- `docs/TESTES-API.md` — testes GET/POST.
-- `docs/DEPLOY.md` — deploy de demonstração.
+- `docs/TESTES-API.md` — testes locais.
+- `docs/DEPLOY.md` — deploy e variáveis de ambiente.
 - `docs/SPEC-KIT-GUIA.md` — como usar Spec-Kit no G2.
 - `.specify/memory/constitution.md` — princípios do repositório.
 
 ## Spec-Kit
 
-O material do professor mostra o uso de `specify init` por repositório e a sequência Constitution → Specify → Clarify → Plan → Tasks → Analyze → Implement. Este repositório já contém uma constitution e specs iniciais para o G2.
+O repositório mantém specs incrementais. A feature `specs/006-integracao-api-g1/` registra o diagnóstico, plano e tarefas da migração do Mock API para a API oficial do G1.

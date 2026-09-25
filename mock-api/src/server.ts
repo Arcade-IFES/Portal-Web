@@ -164,44 +164,55 @@ function publicGame(db: Banco, game: Jogo) {
     repositorio_url: game.repositorio_url,
     preview_url: game.preview_url,
     versoes: game.versoes,
+    versao_id:
+      game.versoes.find((version) => version.estado === game.status)?.id ??
+      game.versoes[0]?.id,
     current_version_id:
       game.versoes.find((version) => version.estado === 'aprovado')?.id ??
       game.versoes[0]?.id,
   }
 }
 
-function rankingJogadores(db: Banco, jogoId?: string) {
-  const scores = jogoId
-    ? db.placares.filter((score) => score.jogo_id === jogoId)
-    : db.placares
-
-  const best = new Map<string, number>()
+function rankingJogadores(db: Banco, jogoId: string) {
+  const scores = db.placares.filter((score) => score.jogo_id === jogoId)
+  const best = new Map<string, Placar>()
+  const counts = new Map<string, number>()
 
   for (const score of scores) {
-    const key = `${score.jogador}::${score.jogo_id}`
-    best.set(key, Math.max(best.get(key) ?? 0, score.pontos))
+    if (score.jogador === 'ANON') continue
+
+    counts.set(score.jogador, (counts.get(score.jogador) ?? 0) + 1)
+
+    const current = best.get(score.jogador)
+    if (
+      !current ||
+      score.pontos > current.pontos ||
+      (score.pontos === current.pontos &&
+        score.jogado_em.localeCompare(current.jogado_em) < 0)
+    ) {
+      best.set(score.jogador, score)
+    }
   }
 
-  const totals = new Map<string, number>()
-
-  for (const [key, pontos] of best) {
-    const jogador = key.split('::')[0]
-    totals.set(
-      jogador,
-      (totals.get(jogador) ?? 0) + (jogoId ? pontos : pontos),
+  return [...best.values()]
+    .sort(
+      (a, b) =>
+        b.pontos - a.pontos ||
+        a.jogado_em.localeCompare(b.jogado_em),
     )
-  }
-
-  return [...totals.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .map(([apelido, pontos], index) => ({
+    .map((score, index) => ({
       posicao: index + 1,
-      apelido,
-      pontos,
-      jogo_id: jogoId,
-      jogo: jogoId
-        ? db.jogos.find((game) => game.id === jogoId)?.nome
-        : undefined,
+      apelido: score.jogador,
+      pontos: score.pontos,
+      jogo_id: score.jogo_id,
+      jogo:
+        db.jogos.find((game) => game.id === score.jogo_id)?.nome ??
+        score.jogo_id,
+      acertos: score.acertos ?? 0,
+      erros: score.erros ?? 0,
+      duracao_s: score.duracao_s,
+      jogado_em: score.jogado_em,
+      partidas: counts.get(score.jogador) ?? 0,
     }))
 }
 
@@ -307,32 +318,26 @@ app.get('/api/jogos/:id', async (req, reply) => {
   }
 })
 
-// O professor confirmou o novo fluxo do projeto: o Portal coleta uma URL de repositório GitHub.
-// Este mock aceita esse contrato até o G1 publicar o endpoint definitivo.
+// O mock reproduz o contrato atual do G1 para desenvolvimento local.
+// Ele não baixa o GitHub nem valida game.json; essa responsabilidade continua no G1.
 app.post('/api/jogos', async (req, reply) => {
-  const body = req.body as Partial<Jogo> & {
-    repositorio?: string
-    url?: string
+  const body = req.body as {
+    repositorio_url?: string
+    ref?: string
+    resumo?: string
   }
-  const repo = body.repositorio_url || body.repositorio || body.url
 
-  if (!validGithubUrl(repo)) {
+  if (!validGithubUrl(body.repositorio_url)) {
     return reply.code(422).send({
       codigo: 'REPOSITORIO_INVALIDO',
       erro: 'Informe uma URL HTTPS válida de um repositório GitHub.',
     })
   }
 
-  const required = ['nome', 'versao', 'descricao', 'resumo', 'controles'] as const
-  const missing = required.filter((key) => !body[key])
-
-  if (missing.length || !Array.isArray(body.autores) || !body.autores.length) {
-    return reply.code(422).send({
-      codigo: 'DADOS_INCOMPLETOS',
-      erro: `Campos obrigatórios ausentes: ${[
-        ...missing,
-        ...(Array.isArray(body.autores) && body.autores.length ? [] : ['autores']),
-      ].join(', ')}.`,
+  if (!body.ref?.trim()) {
+    return reply.code(400).send({
+      codigo: 'REQUISICAO_INVALIDA',
+      erro: 'Informe a tag/ref da versão.',
     })
   }
 
@@ -340,32 +345,32 @@ app.post('/api/jogos', async (req, reply) => {
   const id = `jogo-${Date.now()}`
   const versionId = `versao-${Date.now()}`
   const submittedAt = now()
+  const ref = body.ref.trim()
 
   const version: Versao = {
     id: versionId,
     jogo_id: id,
-    versao: String(body.versao),
+    versao: ref.replace(/^v/, '') || ref,
     estado: 'submetido',
     submetido_em: submittedAt,
-    repositorio_url: repo,
+    repositorio_url: body.repositorio_url,
   }
 
   const game: Jogo = {
     id,
-    nome: String(body.nome),
-    descricao: String(body.descricao),
-    resumo: String(body.resumo),
-    classico_referencia: String(
-      body.classico_referencia || 'A informar pelo manifesto',
-    ),
-    mecanica: String(body.mecanica || 'A informar pelo manifesto'),
-    tema: String(body.tema || 'A informar pelo manifesto'),
-    nivel: String(body.nivel || 'A informar pelo manifesto'),
-    autores: body.autores as string[],
-    controles: String(body.controles),
-    versao: String(body.versao),
+    nome: `Jogo enviado (${ref})`,
+    descricao: 'Dados simulados pelo Mock API local.',
+    resumo: body.resumo?.trim() || 'Submissão de teste do Portal G2.',
+    classico_referencia: 'A informar pelo manifesto',
+    mecanica: 'A informar pelo manifesto',
+    tema: 'A informar pelo manifesto',
+    nivel: 'A informar pelo manifesto',
+    autores: ['Autor do mock'],
+    controles: 'A informar pelo manifesto',
+    versao: version.versao,
     status: 'submetido',
-    repositorio_url: repo,
+    repositorio_url: body.repositorio_url,
+    preview_url: undefined,
     versoes: [version],
     feedbacks: [],
     taxa_acerto_tema: [],
@@ -377,13 +382,58 @@ app.post('/api/jogos', async (req, reply) => {
   return reply.code(201).send(publicGame(db, game))
 })
 
+function getBearerToken(req: { headers: { authorization?: string } }) {
+  const authorization = req.headers.authorization
+
+  if (!authorization?.startsWith('Bearer ')) {
+    return ''
+  }
+
+  return authorization.slice('Bearer '.length).trim()
+}
+
+function requireMockCurator(
+  req: { headers: { authorization?: string } },
+  reply: { code: (status: number) => { send: (payload: unknown) => unknown } },
+) {
+  const token = getBearerToken(req)
+
+  if (!token) {
+    reply.code(401).send({
+      codigo: 'NAO_AUTENTICADO',
+      erro: 'Informe o token de curador.',
+    })
+    return false
+  }
+
+  if (token !== 'dev-curador') {
+    reply.code(401).send({
+      codigo: 'TOKEN_INVALIDO',
+      erro: 'Token de curador inválido no Mock API. Use dev-curador.',
+    })
+    return false
+  }
+
+  return true
+}
+
+app.get('/api/curadores/eu', async (req, reply) => {
+  if (!requireMockCurator(req, reply)) return
+
+  return {
+    id: 'dev-curador',
+    nome: 'Curador de Desenvolvimento',
+  }
+})
+
 app.post('/api/versoes/:id/decisao', async (req, reply) => {
+  if (!requireMockCurator(req, reply)) return
+
   const db = await readDb()
   const { id } = req.params as { id: string }
   const body = req.body as {
     decisao?: string
     justificativa?: string
-    curador?: string
   }
   const version = db.jogos.flatMap((game) => game.versoes).find((item) => item.id === id)
 
@@ -409,7 +459,7 @@ app.post('/api/versoes/:id/decisao', async (req, reply) => {
 
   version.estado = body.decisao
   version.decidido_em = now()
-  version.decidido_por = body.curador || 'CURADOR'
+  version.decidido_por = 'dev-curador'
   version.justificativa = body.justificativa?.trim()
   game.status = body.decisao
 
@@ -418,7 +468,7 @@ app.post('/api/versoes/:id/decisao', async (req, reply) => {
     versao_id: id,
     decisao: body.decisao,
     justificativa: body.justificativa?.trim() || '',
-    curador: body.curador || 'CURADOR',
+    curador: 'dev-curador',
     quando: now(),
   })
 
@@ -427,9 +477,23 @@ app.post('/api/versoes/:id/decisao', async (req, reply) => {
   return publicGame(db, game)
 })
 
-app.get('/api/ranking/jogadores', async (req) => {
+app.get('/api/ranking/jogadores', async (req, reply) => {
   const db = await readDb()
   const { jogo } = req.query as { jogo?: string }
+
+  if (!jogo) {
+    return reply.code(400).send({
+      codigo: 'REQUISICAO_INVALIDA',
+      erro: 'Informe o jogo no parâmetro ?jogo=.',
+    })
+  }
+
+  if (!db.jogos.some((game) => game.id === jogo)) {
+    return reply.code(404).send({
+      codigo: 'JOGO_NAO_ENCONTRADO',
+      erro: 'Jogo não encontrado.',
+    })
+  }
 
   return rankingJogadores(db, jogo)
 })
@@ -441,25 +505,44 @@ app.get('/api/ranking/jogos', async () => {
 })
 
 app.post('/api/ranking/jogadores/anonimizar', async (req, reply) => {
+  if (!requireMockCurator(req, reply)) return
+
   const db = await readDb()
-  const { apelido } = req.body as { apelido?: string }
+  const { apelido, jogo } = req.body as {
+    apelido?: string
+    jogo?: string
+  }
 
   if (!apelido?.trim()) {
-    return reply.code(400).send({ erro: 'Informe o apelido.' })
+    return reply.code(400).send({
+      codigo: 'REQUISICAO_INVALIDA',
+      erro: 'Informe o apelido.',
+    })
+  }
+
+  if (jogo && !db.jogos.some((game) => game.id === jogo)) {
+    return reply.code(404).send({
+      codigo: 'JOGO_NAO_ENCONTRADO',
+      erro: 'Jogo não encontrado.',
+    })
   }
 
   let changed = false
+  let partidas = 0
+  let votos = 0
 
   for (const score of db.placares) {
-    if (score.jogador === apelido) {
+    if (score.jogador === apelido && (!jogo || score.jogo_id === jogo)) {
       score.jogador = 'ANON'
       changed = true
+      partidas += 1
     }
   }
 
   for (const feedback of db.feedbacks) {
-    if (feedback.jogador === apelido) {
+    if (feedback.jogador === apelido && (!jogo || feedback.jogo_id === jogo)) {
       feedback.jogador = 'ANON'
+      votos += 1
     }
   }
 
@@ -479,6 +562,8 @@ app.post('/api/ranking/jogadores/anonimizar', async (req, reply) => {
     ok: true,
     apelido_anterior: apelido,
     apelido_novo: 'ANON',
+    partidas,
+    votos,
   }
 })
 

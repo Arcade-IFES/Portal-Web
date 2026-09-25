@@ -5,6 +5,7 @@ import {
   ExternalLink,
   Gamepad2,
   Github,
+  KeyRound,
   Menu,
   ShieldCheck,
   Star,
@@ -20,7 +21,16 @@ import {
   Routes,
   useParams,
 } from 'react-router-dom'
-import { api, type Game, type GameRank, type PlayerRank } from './api'
+import {
+  api,
+  clearCuratorToken,
+  getApiErrorMessage,
+  getStoredCuratorToken,
+  setCuratorToken,
+  type Game,
+  type GameRank,
+  type PlayerRank,
+} from './api'
 import './styles.css'
 
 function Header() {
@@ -28,7 +38,9 @@ function Header() {
   const [online, setOnline] = useState<boolean | null>(null)
 
   useEffect(() => {
-    api.health().then(() => setOnline(true)).catch(() => setOnline(false))
+    api.health()
+      .then(() => setOnline(true))
+      .catch(() => setOnline(false))
   }, [])
 
   return (
@@ -60,11 +72,19 @@ function Header() {
         <div className="header-status">
           <span
             className={`status-dot ${
-              online === true ? 'is-online' : online === false ? 'is-offline' : ''
+              online === true
+                ? 'is-online'
+                : online === false
+                  ? 'is-offline'
+                  : ''
             }`}
           />
           <span>
-            {online === true ? 'API ONLINE' : online === false ? 'API OFFLINE' : 'API...'}
+            {online === true
+              ? 'API ONLINE'
+              : online === false
+                ? 'API OFFLINE'
+                : 'API...'}
           </span>
         </div>
 
@@ -89,7 +109,15 @@ function Footer() {
   )
 }
 
-function Layout({ title, eyebrow, children }: { title: string; eyebrow?: string; children: ReactNode }) {
+function Layout({
+  title,
+  eyebrow,
+  children,
+}: {
+  title: string
+  eyebrow?: string
+  children: ReactNode
+}) {
   return (
     <div className="app-shell">
       <Header />
@@ -110,7 +138,7 @@ function ErrorBox({ message }: { message: string }) {
     <div className="message message--error">
       <XCircle size={22} />
       <div>
-        <strong>Não foi possível consultar a API.</strong>
+        <strong>Não foi possível concluir a operação.</strong>
         <p>{message}</p>
       </div>
     </div>
@@ -125,7 +153,11 @@ function GameCard({ game }: { game: Game }) {
   return (
     <Link className="game-card" to={`/jogos/${game.id}`}>
       <div className="game-card__art">
-        {game.capa ? <img src={game.capa} alt="" /> : <Gamepad2 size={48} />}
+        {game.capa_url ? (
+          <img src={game.capa_url} alt={`Capa de ${game.nome}`} />
+        ) : (
+          <Gamepad2 size={48} />
+        )}
         <span>APROVADO</span>
       </div>
       <div className="game-card__body">
@@ -136,7 +168,8 @@ function GameCard({ game }: { game: Game }) {
           <span>{game.nivel}</span>
         </div>
         <div className="rating">
-          <Star size={15} fill="currentColor" /> {game.nota_media.toFixed(1)}/5
+          <Star size={15} fill="currentColor" />
+          {game.nota_media.toFixed(1)}/5
           <small>({game.votos} votos)</small>
         </div>
       </div>
@@ -146,10 +179,15 @@ function GameCard({ game }: { game: Game }) {
 
 function Catalogo() {
   const [games, setGames] = useState<Game[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    api.jogos().then(setGames).catch((e) => setError(e.message))
+    setLoading(true)
+    api.jogos()
+      .then(setGames)
+      .catch((e) => setError(getApiErrorMessage(e)))
+      .finally(() => setLoading(false))
   }, [])
 
   return (
@@ -157,15 +195,25 @@ function Catalogo() {
       <section className="panel">
         <div className="section-head">
           <div>
-            <span className="eyebrow"><Gamepad2 size={15} /> JOGOS APROVADOS</span>
+            <span className="eyebrow">
+              <Gamepad2 size={15} /> JOGOS APROVADOS
+            </span>
             <p>Somente versões aprovadas pela curadoria são publicadas aqui.</p>
           </div>
-          <Link className="arcade-button arcade-button--yellow" to="/enviar"><UploadCloud size={17} /> ENVIAR JOGO</Link>
+          <Link
+            className="arcade-button arcade-button--yellow"
+            to="/enviar"
+          >
+            <UploadCloud size={17} /> ENVIAR JOGO
+          </Link>
         </div>
+
         {error ? (
           <ErrorBox message={error} />
-        ) : games.length === 0 ? (
+        ) : loading ? (
           <Loading />
+        ) : games.length === 0 ? (
+          <div className="panel panel--center">NENHUM JOGO APROVADO.</div>
         ) : (
           <div className="game-grid">
             {games.map((game) => (
@@ -181,14 +229,30 @@ function Catalogo() {
 function Detalhes() {
   const { id } = useParams()
   const [game, setGame] = useState<Game | null>(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (id) api.jogo(id).then(setGame).catch((e) => setError(e.message))
+    if (!id) return
+
+    setLoading(true)
+    api.jogo(id)
+      .then(setGame)
+      .catch((e) => setError(getApiErrorMessage(e)))
+      .finally(() => setLoading(false))
   }, [id])
 
-  if (error) return <Layout title="DETALHES"><ErrorBox message={error} /></Layout>
-  if (!game) return <Layout title="DETALHES"><Loading /></Layout>
+  if (loading) {
+    return <Layout title="DETALHES"><Loading /></Layout>
+  }
+
+  if (error) {
+    return <Layout title="DETALHES"><ErrorBox message={error} /></Layout>
+  }
+
+  if (!game) {
+    return <Layout title="DETALHES"><ErrorBox message="Jogo não encontrado." /></Layout>
+  }
 
   return (
     <Layout title={game.nome} eyebrow="DETALHE DO JOGO">
@@ -196,19 +260,48 @@ function Detalhes() {
         <Link className="back-link" to="/catalogo">
           <ChevronLeft size={18} /> VOLTAR AO CATÁLOGO
         </Link>
+
         <div className="detail-grid">
-          <div className="detail-cover">{game.capa ? <img src={game.capa} alt="" /> : <Gamepad2 size={76} />}<span>V{game.versao}</span></div>
+          <div className="detail-cover">
+            {game.capa_url ? (
+              <img src={game.capa_url} alt={`Capa de ${game.nome}`} />
+            ) : (
+              <Gamepad2 size={76} />
+            )}
+            <span>V{game.versao}</span>
+          </div>
+
           <div>
-            <div className="tag-row"><span>{game.tema}</span><span>{game.nivel}</span><span>{game.classico_referencia || 'Clássico não informado'}</span></div>
+            <div className="tag-row">
+              <span>{game.tema}</span>
+              <span>{game.nivel}</span>
+              <span>
+                {game.classico_referencia || 'Clássico não informado'}
+              </span>
+            </div>
+
             <h2 className="detail-title">{game.nome}</h2>
             <p className="lead">{game.resumo}</p>
+
             <div className="detail-meta">
-              <span><Users size={16} /> {game.autores.join(', ')}</span>
-              <span><Star size={16} /> {game.nota_media.toFixed(1)}/5 • {game.votos} votos</span>
+              <span>
+                <Users size={16} /> {game.autores.join(', ')}
+              </span>
+              <span>
+                <Star size={16} /> {game.nota_media.toFixed(1)}/5 •{' '}
+                {game.votos} votos
+              </span>
             </div>
-            <h3>Descrição</h3><p>{game.descricao}</p>
-            <h3>Mecânica</h3><p>{game.mecanica || 'Não informado pela API.'}</p>
-            <h3>Controles</h3><p className="code-like">{game.controles}</p>
+
+            <h3>Descrição</h3>
+            <p>{game.descricao}</p>
+
+            <h3>Mecânica</h3>
+            <p>{game.mecanica || 'Não informado pela API.'}</p>
+
+            <h3>Controles</h3>
+            <p className="code-like">{game.controles}</p>
+
             {game.repositorio_url && (
               <a
                 className="external-link"
@@ -232,7 +325,9 @@ function Detalhes() {
                   {version.estado}
                 </span>
                 <small>
-                  {new Date(version.submetido_em).toLocaleDateString('pt-BR')}
+                  {version.submetido_em
+                    ? new Date(version.submetido_em).toLocaleDateString('pt-BR')
+                    : 'Data não informada'}
                 </small>
                 {version.justificativa && <span>{version.justificativa}</span>}
               </div>
@@ -259,9 +354,15 @@ function Detalhes() {
               ))
             )}
           </div>
+
           <div className="detail-section">
             <h3>TAXA DE ACERTO POR TEMA</h3>
-            {(game.taxa_acerto_tema || []).map((item) => <div className="accuracy-row" key={item.tema}><span>{item.tema}</span><strong>{item.taxa.toFixed(1)}%</strong></div>)}
+            {(game.taxa_acerto_tema || []).map((item) => (
+              <div className="accuracy-row" key={item.tema}>
+                <span>{item.tema}</span>
+                <strong>{item.taxa.toFixed(1)}%</strong>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -270,7 +371,11 @@ function Detalhes() {
 }
 
 function Enviar() {
-  const [form, setForm] = useState({ nome: '', versao: '1.0.0', descricao: '', resumo: '', autores: '', controles: '', repositorio_url: '' })
+  const [form, setForm] = useState({
+    repositorio_url: '',
+    ref: 'v1.0.0',
+    resumo: '',
+  })
   const [state, setState] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
 
@@ -282,24 +387,24 @@ function Enviar() {
     event.preventDefault()
     setState('sending')
     setMessage('')
+
     try {
-      await api.submeterJogo({ ...form, autores: form.autores.split(',').map((value) => value.trim()).filter(Boolean) })
+      await api.submeterJogo({
+        repositorio_url: form.repositorio_url.trim(),
+        ref: form.ref.trim(),
+        resumo: form.resumo.trim() || undefined,
+      })
+
       setState('success')
       setMessage('Submissão enviada. O jogo entrou na fila de curadoria.')
       setForm({
-        nome: '',
-        versao: '1.0.0',
-        descricao: '',
-        resumo: '',
-        autores: '',
-        controles: '',
         repositorio_url: '',
+        ref: 'v1.0.0',
+        resumo: '',
       })
     } catch (error) {
       setState('error')
-      setMessage(
-        error instanceof Error ? error.message : 'Erro ao enviar a submissão.',
-      )
+      setMessage(getApiErrorMessage(error))
     }
   }
 
@@ -309,19 +414,25 @@ function Enviar() {
         <div className="section-head">
           <div>
             <span className="eyebrow">
-              <Github size={15} /> NOVO FLUXO
+              <Github size={15} /> SUBMISSÃO POR REPOSITÓRIO
             </span>
             <p>
-              O G2 coleta os metadados e envia a URL do repositório para a API da
-              plataforma. Validação e persistência não pertencem ao Portal.
+              O Portal envia apenas o repositório, a tag da versão e um resumo
+              opcional. Os demais dados vêm do game.json do jogo.
             </p>
           </div>
         </div>
-        {state === 'success' && <div className="message message--success"><CheckCircle2 size={22} /> {message}</div>}
+
+        {state === 'success' && (
+          <div className="message message--success">
+            <CheckCircle2 size={22} />
+            <span>{message}</span>
+          </div>
+        )}
+
         {state === 'error' && <ErrorBox message={message} />}
+
         <form className="form-grid" onSubmit={submit}>
-          <label>NOME DO JOGO<input value={form.nome} onChange={(e) => update('nome', e.target.value)} required /></label>
-          <label>VERSÃO<input value={form.versao} onChange={(e) => update('versao', e.target.value)} placeholder="1.0.0" required /></label>
           <label className="field--wide">
             URL DO REPOSITÓRIO GITHUB
             <input
@@ -329,53 +440,45 @@ function Enviar() {
               value={form.repositorio_url}
               onChange={(e) => update('repositorio_url', e.target.value)}
               placeholder="https://github.com/usuario/repositorio"
-              pattern="https://(www\\.)?github\\.com/.+/.+"
+              pattern="https://(www\.)?github\.com/[^/]+/[^/]+/?"
               required
             />
             <small>
-              Fluxo confirmado pelo professor: o jogo é referenciado pelo
-              repositório GitHub.
+              O repositório precisa ser público e conter o jogo no formato
+              exigido pelo G1.
             </small>
           </label>
+
           <label>
-            AUTOR(ES)
+            TAG / REF DA VERSÃO
             <input
-              value={form.autores}
-              onChange={(e) => update('autores', e.target.value)}
-              placeholder="Autor 1, Autor 2"
+              value={form.ref}
+              onChange={(e) => update('ref', e.target.value)}
+              placeholder="v1.0.0"
               required
             />
+            <small>Exemplo: v1.0.0</small>
           </label>
-          <label>
-            CONTROLES
-            <textarea
-              value={form.controles}
-              onChange={(e) => update('controles', e.target.value)}
-              required
-            />
-          </label>
+
           <label className="field--wide">
-            RESUMO
+            RESUMO <span className="field-hint">(OPCIONAL)</span>
             <textarea
               value={form.resumo}
+              maxLength={300}
               onChange={(e) => update('resumo', e.target.value)}
-              required
+              placeholder="Resumo curto do jogo."
             />
+            <small>{form.resumo.length}/300 caracteres.</small>
           </label>
-          <label className="field--wide">
-            DESCRIÇÃO
-            <textarea
-              value={form.descricao}
-              onChange={(e) => update('descricao', e.target.value)}
-              required
-            />
-          </label>
+
           <div className="form-actions field--wide">
             <button
               className="arcade-button arcade-button--yellow"
               disabled={state === 'sending'}
             >
-              {state === 'sending' ? 'ENVIANDO...' : 'ENVIAR PARA CURADORIA'}
+              {state === 'sending'
+                ? 'ENVIANDO...'
+                : 'ENVIAR PARA CURADORIA'}
             </button>
           </div>
         </form>
@@ -384,141 +487,286 @@ function Enviar() {
   )
 }
 
+function CuratorLogin({
+  onValidated,
+}: {
+  onValidated: (name: string) => void
+}) {
+  const [token, setToken] = useState(getStoredCuratorToken())
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function validate(event: FormEvent) {
+    event.preventDefault()
+    if (!token.trim()) {
+      setError('Informe o token do curador.')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const curator = await api.validarCurador(token)
+      setCuratorToken(token)
+      onValidated(curator.nome)
+    } catch (e) {
+      clearCuratorToken()
+      setError(getApiErrorMessage(e))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <section className="panel">
+      <div className="section-head">
+        <div>
+          <span className="eyebrow">
+            <KeyRound size={15} /> AUTENTICAÇÃO DE CURADOR
+          </span>
+          <p>
+            Informe o token <code>cur_...</code> fornecido pela API do G1 para
+            realizar decisões e anonimizações.
+          </p>
+        </div>
+      </div>
+
+      {error && <ErrorBox message={error} />}
+
+      <form className="form-grid" onSubmit={validate}>
+        <label className="field--wide">
+          TOKEN DO CURADOR
+          <input
+            type="password"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder="cur_..."
+            autoComplete="off"
+            required
+          />
+        </label>
+        <div className="form-actions field--wide">
+          <button
+            className="arcade-button arcade-button--yellow"
+            disabled={loading}
+          >
+            {loading ? 'VALIDANDO...' : 'VALIDAR TOKEN'}
+          </button>
+        </div>
+      </form>
+    </section>
+  )
+}
+
 function Moderacao() {
   const [games, setGames] = useState<Game[]>([])
   const [selected, setSelected] = useState<Game | null>(null)
   const [justificativa, setJustificativa] = useState('')
-  const [curador, setCurador] = useState('CURADOR')
+  const [curatorName, setCuratorName] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
 
   async function load() {
     try {
+      setLoading(true)
       setGames(await api.decisoesPendentes())
       setError('')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao carregar a fila.')
+      setError(getApiErrorMessage(e))
+    } finally {
+      setLoading(false)
     }
   }
+
   useEffect(() => {
     load()
   }, [])
 
   async function decide(decisao: 'aprovado' | 'reprovado') {
     if (!selected) return
+
+    if (!getStoredCuratorToken()) {
+      setMessage('Valide o token do curador antes de decidir.')
+      return
+    }
+
     if (decisao === 'reprovado' && !justificativa.trim()) {
       setMessage('A reprovação exige justificativa.')
       return
     }
-    const versionId = selected.versoes?.[0]?.id
+
+    const versionId = selected.versao_id || selected.versoes?.find(
+      (version) => version.estado === 'submetido',
+    )?.id
+
     if (!versionId) {
       setMessage('A API não informou o identificador da versão.')
       return
     }
+
     try {
-      await api.decidirVersao(versionId, { decisao, justificativa: justificativa.trim(), curador })
+      await api.decidirVersao(versionId, {
+        decisao,
+        justificativa: justificativa.trim() || undefined,
+      })
       setMessage(`Decisão registrada: ${decisao}.`)
       setSelected(null)
       setJustificativa('')
       await load()
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Erro ao registrar decisão.')
+      setMessage(getApiErrorMessage(e))
     }
+  }
+
+  async function handleValidated(name: string) {
+    setCuratorName(name)
+    setMessage(`Curador autenticado: ${name}.`)
+  }
+
+  function logout() {
+    clearCuratorToken()
+    setCuratorName('')
+    setMessage('Token do curador removido desta sessão.')
   }
 
   return (
     <Layout title="CURADORIA" eyebrow="PAINEL DO CURADOR">
+      <CuratorLogin onValidated={handleValidated} />
+
+      {curatorName && (
+        <section className="panel curator-session">
+          <span>
+            CURADOR AUTENTICADO: <strong>{curatorName}</strong>
+          </span>
+          <button className="text-button" onClick={logout}>
+            SAIR
+          </button>
+        </section>
+      )}
+
       {error && <ErrorBox message={error} />}
+
       <section className="moderation-layout">
         <div className="panel moderation-list">
-          <div className="section-head"><div><span className="eyebrow"><ShieldCheck size={15} /> FILA</span><p>Somente versões submetidas aguardam decisão.</p></div></div>
-          {games.length === 0 ? (
+          <div className="section-head">
+            <div>
+              <span className="eyebrow">
+                <ShieldCheck size={15} /> FILA
+              </span>
+              <p>Somente versões submetidas aguardam decisão.</p>
+            </div>
+          </div>
+
+          {loading ? (
+            <Loading />
+          ) : games.length === 0 ? (
             <p>Nenhum jogo pendente.</p>
           ) : (
             games.map((game) => (
               <button
-                className={`queue-item ${selected?.id === game.id ? 'is-selected' : ''}`}
-                key={game.id}
+                className={`queue-item ${
+                  selected?.id === game.id ? 'is-selected' : ''
+                }`}
+                key={`${game.id}-${game.versao_id || game.versao}`}
                 onClick={() => setSelected(game)}
               >
                 <strong>{game.nome}</strong>
-                <span>v{game.versao} • {game.autores.join(', ')}</span>
+                <span>
+                  v{game.versao} • {game.autores.join(', ')}
+                </span>
               </button>
             ))
           )}
         </div>
 
         <div className="panel moderation-preview">
-          {!selected ? <div className="empty-preview">SELECIONE UM JOGO PARA ANALISAR</div> : <>
-            <div className="preview-head">
-              <div>
-                <span className="eyebrow">PREVIEW DE CURADORIA</span>
-                <h2>{selected.nome}</h2>
-              </div>
-              <a
-                className="external-link"
-                href={selected.repositorio_url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Github size={16} /> REPOSITÓRIO
-              </a>
+          {!selected ? (
+            <div className="empty-preview">
+              SELECIONE UM JOGO PARA ANALISAR
             </div>
-            {selected.preview_url ? (
-              <iframe
-                className="preview-frame"
-                title={`Preview de ${selected.nome}`}
-                src={selected.preview_url}
-                sandbox="allow-scripts allow-forms"
-              />
-            ) : (
-              <div className="preview-unavailable">
-                <Gamepad2 size={46} />
-                <p>A API ainda não forneceu `preview_url` para esta submissão.</p>
-                <a
-                  className="external-link"
-                  href={selected.repositorio_url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  ABRIR REPOSITÓRIO <ExternalLink size={14} />
-                </a>
+          ) : (
+            <>
+              <div className="preview-head">
+                <div>
+                  <span className="eyebrow">PREVIEW DE CURADORIA</span>
+                  <h2>{selected.nome}</h2>
+                </div>
+                {selected.repositorio_url && (
+                  <a
+                    className="external-link"
+                    href={selected.repositorio_url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Github size={16} /> REPOSITÓRIO
+                  </a>
+                )}
               </div>
-            )}
-            <div className="decision-box">
-              <label>
-                CURADOR
-                <input
-                  value={curador}
-                  maxLength={60}
-                  onChange={(e) => setCurador(e.target.value)}
+
+              {selected.preview_url ? (
+                <iframe
+                  className="preview-frame"
+                  title={`Preview de ${selected.nome}`}
+                  src={selected.preview_url}
+                  sandbox="allow-scripts allow-forms"
                 />
-              </label>
-              <label>
-                JUSTIFICATIVA
-                <textarea
-                  value={justificativa}
-                  onChange={(e) => setJustificativa(e.target.value)}
-                  placeholder="Obrigatória para reprovação."
-                />
-              </label>
-              <div className="decision-actions">
-                <button
-                  className="arcade-button arcade-button--green"
-                  onClick={() => decide('aprovado')}
-                >
-                  APROVAR
-                </button>
-                <button
-                  className="arcade-button arcade-button--pink"
-                  onClick={() => decide('reprovado')}
-                >
-                  REPROVAR
-                </button>
+              ) : (
+                <div className="preview-unavailable">
+                  <Gamepad2 size={46} />
+                  <p>
+                    A API ainda não forneceu <code>preview_url</code> para esta
+                    submissão.
+                  </p>
+                  {selected.repositorio_url && (
+                    <a
+                      className="external-link"
+                      href={selected.repositorio_url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      ABRIR REPOSITÓRIO <ExternalLink size={14} />
+                    </a>
+                  )}
+                </div>
+              )}
+
+              <div className="decision-box">
+                <div className="decision-curator">
+                  CURADOR: <strong>{curatorName || 'NÃO AUTENTICADO'}</strong>
+                </div>
+
+                <label>
+                  JUSTIFICATIVA
+                  <textarea
+                    value={justificativa}
+                    onChange={(e) => setJustificativa(e.target.value)}
+                    placeholder="Obrigatória para reprovação."
+                  />
+                </label>
+
+                <div className="decision-actions">
+                  <button
+                    className="arcade-button arcade-button--green"
+                    onClick={() => decide('aprovado')}
+                    disabled={!curatorName}
+                  >
+                    APROVAR
+                  </button>
+                  <button
+                    className="arcade-button arcade-button--pink"
+                    onClick={() => decide('reprovado')}
+                    disabled={!curatorName}
+                  >
+                    REPROVAR
+                  </button>
+                </div>
+
+                {message && <p className="inline-message">{message}</p>}
               </div>
-              {message && <p className="inline-message">{message}</p>}
-            </div>
-          </>}
+            </>
+          )}
         </div>
       </section>
     </Layout>
@@ -529,27 +777,48 @@ function RankingJogadores() {
   const [ranking, setRanking] = useState<PlayerRank[]>([])
   const [games, setGames] = useState<Game[]>([])
   const [gameId, setGameId] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    api.jogos().then(setGames).catch(() => undefined)
+    api.jogos()
+      .then(setGames)
+      .catch((e) => setError(getApiErrorMessage(e)))
   }, [])
+
   useEffect(() => {
-    api
-      .rankingJogadores(gameId || undefined)
+    if (!gameId) {
+      setRanking([])
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    api.rankingJogadores(gameId)
       .then(setRanking)
-      .catch(() => setRanking([]))
+      .catch((e) => {
+        setRanking([])
+        setError(getApiErrorMessage(e))
+      })
+      .finally(() => setLoading(false))
   }, [gameId])
 
   async function anonymize(apelido: string) {
+    if (!getStoredCuratorToken()) {
+      setMessage('A anonimização exige um token de curador.')
+      return
+    }
+
     try {
-      const result = await api.anonimizarJogador(apelido)
+      const result = await api.anonimizarJogador(apelido, gameId)
       setMessage(
         `${result.apelido_anterior} foi anonimizado como ${result.apelido_novo}.`,
       )
-      setRanking(await api.rankingJogadores(gameId || undefined))
+      setRanking(await api.rankingJogadores(gameId))
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Não foi possível anonimizar.')
+      setMessage(getApiErrorMessage(e))
     }
   }
 
@@ -558,9 +827,9 @@ function RankingJogadores() {
       <section className="panel">
         <div className="toolbar">
           <label>
-            FILTRAR POR JOGO
+            SELECIONE O JOGO
             <select value={gameId} onChange={(e) => setGameId(e.target.value)}>
-              <option value="">GERAL</option>
+              <option value="">SELECIONE...</option>
               {games.map((game) => (
                 <option value={game.id} key={game.id}>
                   {game.nome}
@@ -569,24 +838,45 @@ function RankingJogadores() {
             </select>
           </label>
         </div>
-        <div className="ranking-list">
-          {ranking.map((player) => (
-            <div
-              className="ranking-row"
-              key={`${player.apelido}-${player.posicao}`}
-            >
-              <strong className="rank-position">#{player.posicao}</strong>
-              <span className="rank-name">{player.apelido}</span>
-              <strong>{player.pontos.toLocaleString('pt-BR')}</strong>
-              <button
-                className="text-button"
-                onClick={() => anonymize(player.apelido)}
+
+        {!gameId ? (
+          <div className="panel panel--center">
+            SELECIONE UM JOGO PARA CONSULTAR O RANKING.
+          </div>
+        ) : loading ? (
+          <Loading />
+        ) : error ? (
+          <ErrorBox message={error} />
+        ) : ranking.length === 0 ? (
+          <div className="panel panel--center">
+            NENHUMA PARTIDA NO RANKING DESTE JOGO.
+          </div>
+        ) : (
+          <div className="ranking-list">
+            {ranking.map((player) => (
+              <div
+                className="ranking-row"
+                key={`${player.apelido}-${player.posicao}`}
               >
-                ANONIMIZAR
-              </button>
-            </div>
-          ))}
-        </div>
+                <strong className="rank-position">#{player.posicao}</strong>
+                <span className="rank-name">
+                  <strong>{player.apelido}</strong>
+                  <small>
+                    {player.partidas ?? 0} partidas • melhor: {player.pontos.toLocaleString('pt-BR')}
+                  </small>
+                </span>
+                <strong>{player.pontos.toLocaleString('pt-BR')}</strong>
+                <button
+                  className="text-button"
+                  onClick={() => anonymize(player.apelido)}
+                >
+                  ANONIMIZAR
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {message && <p className="inline-message">{message}</p>}
       </section>
     </Layout>
@@ -595,41 +885,59 @@ function RankingJogadores() {
 
 function RankingJogos() {
   const [ranking, setRanking] = useState<GameRank[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
   useEffect(() => {
-    api.rankingJogos().then(setRanking).catch(() => setRanking([]))
+    api.rankingJogos()
+      .then(setRanking)
+      .catch((e) => setError(getApiErrorMessage(e)))
+      .finally(() => setLoading(false))
   }, [])
+
   return (
     <Layout title="RANKING DE JOGOS" eyebrow="RF-G08 / RF-G14">
       <section className="panel">
         <div className="ranking-explanation">
           <strong>Como a métrica funciona</strong>
           <p>
-            A API calcula uma média ponderada que combina nota e volume de votos.
-            Com m = 5: <code>nota_ajustada = (v/(v+m))*R + (m/(v+m))*C</code>.
+            A API calcula a nota ajustada pela média ponderada definida pelo
+            G1. Com <code>m = 5</code>:
+            {' '}
+            <code>nota_ajustada = v/(v+m) · R + m/(v+m) · C</code>.
             Empates usam jogadores distintos e depois partidas.
           </p>
         </div>
-        <div className="ranking-list">
-          {ranking.map((item) => (
-            <div
-              className="ranking-row ranking-row--game"
-              key={item.jogo_id}
-            >
-              <strong className="rank-position">#{item.posicao}</strong>
-              <span className="rank-name">
-                <strong>{item.jogo}</strong>
-                <small>
-                  {item.votos} votos • {item.partidas} partidas •{' '}
-                  {item.jogadores_distintos} jogadores
-                </small>
-              </span>
-              <span>
-                <Star size={15} /> {item.nota.toFixed(1)}/5
-              </span>
-              <strong>{item.nota_ajustada.toFixed(2)}</strong>
-            </div>
-          ))}
-        </div>
+
+        {loading ? (
+          <Loading />
+        ) : error ? (
+          <ErrorBox message={error} />
+        ) : ranking.length === 0 ? (
+          <div className="panel panel--center">NENHUM JOGO NO RANKING.</div>
+        ) : (
+          <div className="ranking-list">
+            {ranking.map((item) => (
+              <div
+                className="ranking-row ranking-row--game"
+                key={item.jogo_id}
+              >
+                <strong className="rank-position">#{item.posicao}</strong>
+                <span className="rank-name">
+                  <strong>{item.jogo}</strong>
+                  <small>
+                    {item.votos} votos • {item.partidas} partidas •{' '}
+                    {item.jogadores_distintos} jogadores
+                  </small>
+                </span>
+                <span>
+                  <Star size={15} /> {item.nota.toFixed(1)}/5
+                </span>
+                <strong>{item.nota_ajustada.toFixed(2)}</strong>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </Layout>
   )

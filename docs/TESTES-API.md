@@ -1,130 +1,106 @@
-# Testes da API de integração
+# Testes da API no Portal G2
 
-## 1. Subir localmente
+## Mock local
 
-Terminal 1:
-
-```bash
-npm install
-npm run dev:api
-```
-
-Terminal 2:
+Suba o projeto:
 
 ```bash
-npm run dev:web
+npm run dev
 ```
 
-Portal: `http://localhost:5173`
+Mock API:
 
-Mock: `http://localhost:3000`
+```text
+http://localhost:3000
+```
 
-## 2. Health
+## Saúde / catálogo
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:3000/api/jogos
 ```
 
-## 3. GET — catálogo
-
-```bash
-curl "http://localhost:3000/api/jogos?status=aprovado"
-```
-
-## 4. POST — submissão por GitHub
+## Submissão
 
 ```bash
 curl -X POST http://localhost:3000/api/jogos \
   -H "Content-Type: application/json" \
   -d '{
-    "nome":"Jogo de Teste",
-    "versao":"1.0.0",
-    "descricao":"Descrição de teste",
-    "resumo":"Resumo de teste",
-    "autores":["Eliabe"],
-    "controles":"Setas",
-    "repositorio_url":"https://github.com/Arcade-IFES/jogo-demo"
+    "repositorio_url":"https://github.com/Arcade-IFES/jogo-exemplo",
+    "ref":"v1.0.0",
+    "resumo":"Submissão de teste"
   }'
 ```
 
-Depois:
+No mock, os metadados do jogo são simulados. A ingestão real do repositório e a leitura do `game.json` são responsabilidades da API do G1.
+
+## Curador local
+
+O mock usa o token artificial:
+
+```text
+dev-curador
+```
+
+Validar:
+
+```bash
+curl http://localhost:3000/api/curadores/eu \
+  -H "Authorization: Bearer dev-curador"
+```
+
+## Fila de curadoria
 
 ```bash
 curl "http://localhost:3000/api/jogos?status=submetido"
 ```
 
-## 5. POST — decisão de curadoria
+## Decisão local
 
-Use o `id` da versão devolvida pelo POST anterior:
+Substitua `<VERSAO_ID>` por um `versao_id` retornado pela submissão/fila:
 
 ```bash
-curl -X POST http://localhost:3000/api/versoes/demo-v1/decisao \
+curl -X POST "http://localhost:3000/api/versoes/<VERSAO_ID>/decisao" \
+  -H "Authorization: Bearer dev-curador" \
   -H "Content-Type: application/json" \
   -d '{
     "decisao":"aprovado",
-    "justificativa":"Teste aprovado",
-    "curador":"CURADOR"
+    "justificativa":"Jogo validado"
   }'
 ```
 
-## 6. GET — ranking
+## Ranking de jogadores
+
+O contrato atual exige jogo:
 
 ```bash
-curl http://localhost:3000/api/ranking/jogadores
+curl "http://localhost:3000/api/ranking/jogadores?jogo=jogo-exemplo"
+```
+
+## Ranking de jogos
+
+```bash
 curl http://localhost:3000/api/ranking/jogos
 ```
 
-## 7. POST — simular dado vindo do G3
-
-Este endpoint existe somente no mock para provar a integração de dados:
+## Anonimização local
 
 ```bash
-curl -X POST http://localhost:3000/api/placares \
+curl -X POST http://localhost:3000/api/ranking/jogadores/anonimizar \
+  -H "Authorization: Bearer dev-curador" \
   -H "Content-Type: application/json" \
   -d '{
-    "id_partida":"teste-001",
-    "jogo_id":"orbita-do-saber",
-    "jogador":"ELIABE",
-    "pontos":1500,
-    "duracao_s":120,
-    "acertos":8,
-    "erros":2,
-    "tema":"Ciências"
+    "apelido":"ANA",
+    "jogo":"jogo-exemplo"
   }'
 ```
 
-Depois consulte o ranking.
+## API oficial G1
 
-## 8. O que esse teste prova
+Para integração real, configure:
 
-```text
-POST/GET de integração
-        ↓
-mock de API
-        ↓
-Portal React
-        ↓
-renderização dos dados
+```env
+VITE_API_BASE_URL=https://plataforma-gestao-api.onrender.com/api
 ```
 
-Ele não prova a integração com G1 real. Para isso, `VITE_API_BASE_URL` deve apontar para a API oficial.
-
-## Validação de build e inicialização
-
-Antes do deploy, a sequência mínima é:
-
-```bash
-npm install
-npm run build
-npm start
-```
-
-Após o build, confirme que existe:
-
-```text
-mock-api/dist/server.js
-```
-
-O `npm start` deve ser testado com `web/dist` presente, porque o servidor registra os arquivos estáticos do frontend nessa condição.
-
-Essas verificações fazem parte do hardening documentado em `specs/005-hardening/`.
+Os mesmos fluxos devem ser validados contra a API oficial, com um token de curador real para as operações autenticadas.
