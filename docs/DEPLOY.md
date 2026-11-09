@@ -1,39 +1,51 @@
-# Deploy para teste online
+# Deploy — API + Portal
 
-## Opção preparada: Render
+São **dois serviços publicados separadamente**, igual ao G1 original: a API
+não serve o Portal, cada um tem sua própria URL. O `render.yaml` na raiz já
+descreve os dois.
 
-O `render.yaml` cria um único Web Service de demonstração. Ele sobe o mock Fastify e serve o build do React.
+## 1. A API (`api/`)
 
-### Build
+Siga **[`api/docs/deploy.md`](../api/docs/deploy.md)** — é a documentação
+oficial do G1, já escrita para Render + Supabase, e não precisa de nenhuma
+mudança. Resumo:
 
-```bash
-npm install && npm install --prefix web && npm install --prefix mock-api && npm run build
-```
+1. Crie o banco no Supabase (connection string do *Session pooler*, com
+   `?sslmode=require`) — ver `api/docs/supabase.md`.
+2. No Render: **New → Blueprint**, aponte para este repositório.
+3. Preencha `DATABASE_URL` (obrigatório) e `GITHUB_TOKEN` (recomendado) nas
+   variáveis do serviço `recreio-arcade-api`.
+4. Depois do primeiro deploy, confira `https://<sua-api>.onrender.com/health`
+   → deve responder `"banco":"ok"`.
+5. Crie um curador de verdade (não use `dev-curador` em produção):
+   ```bash
+   DATABASE_URL="<connection string do Supabase>" npm run curador:criar -- "Nome do Curador"
+   ```
+   Rode isso do seu computador, dentro de `api/` — o token só aparece uma vez.
 
-### Start
+## 2. O Portal (`web/`)
 
-```bash
-npm start
-```
+O serviço `recreio-arcade-portal` no `render.yaml` já está configurado como
+**site estático** (sem servidor rodando, só arquivos buildados). Depois que a
+API estiver no ar:
 
-Depois do deploy:
+1. No mesmo Blueprint do Render, edite a variável `VITE_API_BASE_URL` do
+   serviço `recreio-arcade-portal` para a URL real da sua API
+   (ex.: `https://recreio-arcade-api.onrender.com/api`).
+2. Edite `CORS_ORIGINS` no serviço da API para incluir a URL do Portal
+   (ex.: `https://recreio-arcade-portal.onrender.com`) — sem isso, o navegador
+   bloqueia as chamadas por CORS.
+3. Deploy.
 
-- `/` → Portal React
-- `/health` → health da API mock
-- `/api/jogos?status=aprovado` → catálogo mock
+Teste abrindo o Portal publicado e vendo se o catálogo carrega — se o
+cabeçalho mostrar "API OFFLINE", confira o `VITE_API_BASE_URL` (ele é lido
+**no momento do build**, então mudar a variável exige rodar o deploy de novo)
+e o `CORS_ORIGINS` do lado da API.
 
-### Importante
+## 3. Plano gratuito do Render "dorme"
 
-Esse deploy é para testar o G2 enquanto G1 ainda não está disponível. Não trate `mock-api` como API oficial da plataforma.
-
-Quando G1 publicar a API, crie o build do frontend com:
-
-```env
-VITE_API_BASE_URL=https://api-oficial.exemplo/api
-```
-
-e faça o deploy do frontend sem depender do mock.
-
-### Persistência
-
-O `mock-api/data/db.json` é somente uma persistência de desenvolvimento. O banco oficial da plataforma não pertence ao G2.
+Os dois serviços no plano free desligam depois de 15 minutos sem acesso. A
+primeira requisição depois disso demora de 30 a 60 segundos. A API já tem um
+workflow do GitHub Actions para isso
+(`api/.github/workflows/manter-acordada.yml`); o Portal estático não dorme
+(sites estáticos no Render não hibernam, só os `type: web`).

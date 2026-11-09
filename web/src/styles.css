@@ -111,3 +111,39 @@ button { cursor: pointer; }
 @media (max-width: 980px) { .main-nav { display: none; position: absolute; top: 76px; left: 0; right: 0; flex-direction: column; align-items: stretch; padding: 12px 4vw; background: rgba(5,5,16,.98); border-bottom: 2px solid var(--cyan); }.main-nav--open { display: flex; }.main-nav a { text-align: center; }.menu-button { display: inline-flex; margin-left: auto; }.game-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }.detail-grid { grid-template-columns: 1fr; }.detail-cover { min-height: 260px; }.moderation-layout { grid-template-columns: 1fr; }.moderation-list { min-height: auto; }.empty-preview { min-height: 250px; } }
 @media (max-width: 680px) { .site-header__inner { min-height: 68px; }.header-status { display: none; }.page { padding-top: 32px; }.panel { padding: 18px; }.section-head { flex-direction: column; }.game-grid, .form-grid, .detail-grid--secondary { grid-template-columns: 1fr; }.field--wide { grid-column: auto; }.ranking-row, .ranking-row--game { grid-template-columns: 45px 1fr; }.ranking-row > :nth-child(n+3) { grid-column: 2; }.version-row { grid-template-columns: 1fr 1fr; }.site-footer { flex-direction: column; }.page-heading h1 { font-size: 38px; } }
 .game-card__art img, .detail-cover img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+
+.curator-session {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 18px 0 20px;
+  color: var(--muted);
+}
+
+.curator-session strong,
+.decision-curator strong {
+  color: var(--cyan);
+}
+
+.decision-curator {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.field-hint {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+
+/* Administração de estações G3 na sessão autenticada do curador. */
+.station-admin { margin-bottom: 20px; }
+.station-create-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: end; }
+.station-create-form label { display: flex; flex-direction: column; gap: 8px; color: var(--yellow); font-size: 12px; font-weight: 900; letter-spacing: 1px; }
+.station-create-form input { width: 100%; border: 2px solid var(--line); background: #050510; color: #fff; padding: 13px; outline: none; }
+.station-create-form input:focus { border-color: var(--cyan); box-shadow: 0 0 9px rgba(0,245,255,.2); }
+.station-token { margin-top: 16px; overflow-wrap: anywhere; }
+.station-token code { display: block; margin: 10px 0; padding: 12px; background: #050510; color: var(--cyan); overflow-wrap: anywhere; user-select: all; }
+@media (max-width: 680px) { .station-create-form { grid-template-columns: 1fr; } }
