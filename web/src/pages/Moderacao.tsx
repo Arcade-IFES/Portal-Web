@@ -111,7 +111,7 @@ export function Moderacao() {
 
   async function handleValidated(name: string) {
     setCuratorName(name)
-    setMessage(`Curador autenticado: ${name}.`)
+    setMessage(`Curador está autenticado: ${name}.`)
     setError('')
     await loadStations()
   }
