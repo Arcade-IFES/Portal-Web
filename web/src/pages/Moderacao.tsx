@@ -156,7 +156,7 @@ export function Moderacao() {
       {curatorName && (
         <section className="panel curator-session">
           <span>
-            CURADOR AUTENTICADO: <strong>{curatorName}</strong>
+            CURADOR ESTÁ AUTENTICADO: <strong>{curatorName}</strong>
           </span>
           <button className="text-button" onClick={logout}>
             SAIR
